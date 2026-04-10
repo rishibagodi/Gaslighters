@@ -2,14 +2,14 @@
 
 /* ── Design tokens ─────────────────────────────────────── */
 :root {
-  --color-primary: #16a34a;
-  --color-primary-dark: #15803d;
-  --color-accent: #84cc16;
-  --color-bg: #0f172a;
-  --color-surface: #1e293b;
-  --color-text: #f1f5f9;
-  --color-muted: #94a3b8;
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --color-primary: #2D6A4F;
+  --color-primary-dark: #24563f;
+  --color-accent: #D4A843;
+  --color-bg: #F5F0E8;
+  --color-surface: #EDE4D5;
+  --color-text: #1A1A2E;
+  --color-muted: #5C5C72;
+  --font-sans: Calibri, 'Segoe UI', system-ui, sans-serif;
 }
 
 /* ── Base ──────────────────────────────────────────────── */
@@ -23,6 +23,7 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 16px;
 }
 
 body {
@@ -31,6 +32,15 @@ body {
   color: var(--color-text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: Georgia, 'Times New Roman', serif;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────── */
@@ -1160,10 +1170,9 @@ body {
   left: 0;
   right: 0;
   z-index: 200;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border-top: 1px solid #2D6A4F;
+  box-shadow: 0 -4px 14px rgba(26, 26, 46, 0.08);
   /* Safe area for iPhone home bar */
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -1188,7 +1197,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--color-muted);
+  color: #6B7280;
   transition: color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
   outline: none;
@@ -1203,7 +1212,7 @@ body {
 
 /* Active state */
 .navbar__tab--active {
-  color: #4ade80;
+  color: #2D6A4F;
 }
 
 /* Active pill indicator */
@@ -1215,7 +1224,7 @@ body {
   width: 2.5rem;
   height: 3px;
   border-radius: 0 0 4px 4px;
-  background: linear-gradient(90deg, #16a34a, #84cc16);
+  background: #D4A843;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1228,14 +1237,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 28px;
+  height: 28px;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .navbar__icon svg {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 28px;
+  height: 28px;
 }
 
 .navbar__tab--active .navbar__icon {
@@ -1258,6 +1267,77 @@ body {
 /* Push main content above the fixed navbar */
 .app-main {
   padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 1.5rem);
+}
+
+/* ── Earthy warm theme overrides ───────────────────────── */
+.theme-earthy,
+.app-shell {
+  background: #F5F0E8;
+  color: #1A1A2E;
+}
+
+.app-header {
+  background: #F5F0E8;
+  box-shadow: 0 2px 10px rgba(45, 106, 79, 0.12);
+  border-bottom: 1px solid rgba(45, 106, 79, 0.2);
+}
+
+.app-header__logo {
+  background: rgba(45, 106, 79, 0.12);
+  color: #2D6A4F;
+}
+
+.app-header__title {
+  color: #2D6A4F;
+}
+
+.app-header__sub {
+  color: rgba(45, 106, 79, 0.8);
+}
+
+.upload-box,
+.result-card,
+.irr-form,
+.irr-result,
+.dash-score-card,
+.dash-chart-card,
+.dash-list-card {
+  background: #FFFDF8;
+  border-color: rgba(45, 106, 79, 0.22);
+  box-shadow: 0 8px 20px rgba(45, 106, 79, 0.08);
+}
+
+.btn--primary {
+  background: linear-gradient(135deg, #2D6A4F, #24563f);
+}
+
+.btn--primary:not(:disabled):hover {
+  background: linear-gradient(135deg, #24563f, #1f4a36);
+}
+
+.btn--secondary {
+  background: rgba(212, 168, 67, 0.12);
+  border-color: rgba(212, 168, 67, 0.35);
+  color: #1A1A2E;
+}
+
+.status-banner--loading {
+  background: rgba(45, 106, 79, 0.1);
+  border-color: rgba(45, 106, 79, 0.28);
+  color: #2D6A4F;
+}
+
+.navbar {
+  background: rgba(245, 240, 232, 0.95);
+  border-top: 1px solid rgba(45, 106, 79, 0.2);
+}
+
+.navbar__tab--active {
+  color: #2D6A4F;
+}
+
+.navbar__pill {
+  background: linear-gradient(90deg, #2D6A4F, #D4A843);
 }
 
 

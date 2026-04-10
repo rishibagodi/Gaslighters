@@ -30,7 +30,7 @@ const TABS = [
  */
 export default function Navbar({ page, setPage }) {
   return (
-    <nav className="navbar" aria-label="Main navigation">
+    <nav className="navbar navbar--earthy" aria-label="Main navigation">
       <div className="navbar__inner">
         {TABS.map((tab) => {
           const isActive = page === tab.id;

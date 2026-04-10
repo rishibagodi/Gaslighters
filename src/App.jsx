@@ -69,15 +69,24 @@ export default function App() {
 
   /* ── Render ─────────────────────────────────────────── */
   return (
-    <div className="app-shell">
+    <div className="app-shell theme-earthy">
 
       {/* ── Header ───────────────────────────────────── */}
       <header className="app-header">
         <div className="app-header__inner">
           <div className="app-header__logo" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2C6.5 9 4 13.5 4 16a8 8 0 0016 0c0-2.5-2.5-7-8-14z"/>
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 100 Q100 30 180 100 Q100 170 20 100 Z"
+                stroke="#2E7D32" strokeWidth="4" fill="none"/>
+              <circle cx="100" cy="100" r="35" fill="#A5D6A7"/>
+              <path d="M100 70 C120 80, 130 110, 100 130 C70 110, 80 80, 100 70 Z"
+                fill="#2E7D32"/>
+              <line x1="100" y1="75" x2="100" y2="125"
+                stroke="#A5D6A7" strokeWidth="2"/>
+              <path d="M60 100 Q100 60 140 100"
+                stroke="#66BB6A" strokeWidth="2" fill="none" strokeDasharray="4 4"/>
+              <path d="M60 100 Q100 140 140 100"
+                stroke="#66BB6A" strokeWidth="2" fill="none" strokeDasharray="4 4"/>
             </svg>
           </div>
           <div className="app-header__text">
@@ -107,13 +116,6 @@ export default function App() {
                 treatment:  scanResult.treatment  ?? 'Consult an agronomist for treatment options.',
                 prevention: scanResult.prevention ?? 'Monitor crops regularly and maintain field hygiene.',
               }} />
-            )}
-            <IrrigationForm onSubmit={handleIrrigationSubmit} loading={irrigationLoading} />
-            {irrigationError && (
-              <p className="scan-error" role="alert">⚠ {irrigationError}</p>
-            )}
-            {irrigationResult && (
-              <IrrigationResult result={irrigationResult} />
             )}
           </>
         )}

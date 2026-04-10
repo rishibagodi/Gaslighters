@@ -167,7 +167,13 @@ export default function Scanner({ onResult }) {
       tensor = null;
 
       // Top class index
-      const topIndex = scores.indexOf(Math.max(...scores));
+      const maxConfidence = Math.max(...scores);
+      const topIndex = scores.indexOf(maxConfidence);
+
+      if (maxConfidence < 0.4) {
+        setScanError('Could not identify a crop disease. Please upload a clear photo of a plant leaf.');
+        return;
+      }
 
       const mapped = mapPrediction(topIndex, scores);
 
