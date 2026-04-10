@@ -5,13 +5,13 @@ const CROPS  = ['Tomato', 'Potato', 'Maize', 'Rice', 'Wheat', 'Cotton'];
 const STAGES = ['Early', 'Mid', 'Late'];
 const SOILS  = ['Sandy', 'Loam', 'Clay'];
 
-const INITIAL = { crop: '', stage: '', soil: '' };
+const INITIAL = { crop: '', stage: '', soil: '', lat: '', lon: '', apiKey: '', soilMoisture: '' };
 
 /**
  * IrrigationForm
  *
  * @param {{
- *   onSubmit: (values: { crop: string, stage: string, soil: string }) => void,
+ *   onSubmit: (values: { crop: string, stage: string, soil: string, lat: string, lon: string, apiKey: string, soilMoisture: string }) => void,
  *   loading:  boolean,
  * }} props
  */
@@ -19,7 +19,14 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
   const [values, setValues] = useState(INITIAL);
   const [touched, setTouched] = useState({});
 
-  const isComplete = values.crop && values.stage && values.soil;
+  const isComplete =
+    values.crop &&
+    values.stage &&
+    values.soil &&
+    values.lat.trim() &&
+    values.lon.trim() &&
+    values.apiKey.trim() &&
+    values.soilMoisture !== '';
 
   const handleChange = (field) => (e) => {
     setValues((prev) => ({ ...prev, [field]: e.target.value }));
@@ -84,6 +91,55 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
           touched={touched.soil}
           placeholder="Select soil type"
           options={SOILS}
+        />
+
+        <InputField
+          id="irr-lat"
+          label="Latitude"
+          icon={<CoordsIcon />}
+          value={values.lat}
+          onChange={handleChange('lat')}
+          touched={touched.lat}
+          placeholder="e.g. 20.5937"
+          type="number"
+          step="any"
+        />
+
+        <InputField
+          id="irr-lon"
+          label="Longitude"
+          icon={<CoordsIcon />}
+          value={values.lon}
+          onChange={handleChange('lon')}
+          touched={touched.lon}
+          placeholder="e.g. 78.9629"
+          type="number"
+          step="any"
+        />
+
+        <InputField
+          id="irr-api-key"
+          label="Weather API Key"
+          icon={<KeyIcon />}
+          value={values.apiKey}
+          onChange={handleChange('apiKey')}
+          touched={touched.apiKey}
+          placeholder="Enter OpenWeather API key"
+          type="text"
+        />
+
+        <InputField
+          id="irr-soil-moisture"
+          label="Current Soil Moisture (%)"
+          icon={<SoilIcon />}
+          value={values.soilMoisture}
+          onChange={handleChange('soilMoisture')}
+          touched={touched.soilMoisture}
+          placeholder="e.g. 35"
+          type="number"
+          min="0"
+          max="100"
+          step="1"
         />
 
       </div>
@@ -157,6 +213,38 @@ function SelectField({ id, label, icon, value, onChange, touched, placeholder, o
   );
 }
 
+function InputField({ id, label, icon, value, onChange, touched, placeholder, type = 'text', step, min, max }) {
+  const isError = touched && !String(value ?? '').trim();
+
+  return (
+    <div className={`irr-field ${isError ? 'irr-field--error' : ''} ${value ? 'irr-field--filled' : ''}`}>
+      <label className="irr-field__label" htmlFor={id}>{label}</label>
+      <div className="irr-field__wrapper">
+        <span className="irr-field__icon" aria-hidden="true">{icon}</span>
+        <input
+          id={id}
+          className="irr-field__select"
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          aria-invalid={isError}
+          aria-describedby={isError ? `${id}-error` : undefined}
+          step={step}
+          min={min}
+          max={max}
+          required
+        />
+      </div>
+      {isError && (
+        <p id={`${id}-error`} className="irr-field__error-msg" role="alert">
+          Please enter {label.toLowerCase()}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ─── Inline SVG icons ───────────────────────────────────── */
 function CropIcon() {
   return (
@@ -186,3 +274,23 @@ function SoilIcon() {
     </svg>
   );
 }
+
+function CoordsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v20M2 12h20"/>
+    </svg>
+  );
+}
+
+function KeyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="15" r="4"/>
+      <path d="M12 15h9M18 15v3M21 15v2"/>
+    </svg>
+  );
+}
+

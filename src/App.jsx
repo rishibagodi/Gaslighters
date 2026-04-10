@@ -6,23 +6,8 @@ import ResultCard      from './components/ResultCard';
 import Dashboard       from './components/Dashboard';
 import IrrigationForm  from './components/IrrigationForm';
 import IrrigationResult from './components/IrrigationResult';
-
-/* ── localStorage helpers ──────────────────────────────── */
-const LS_KEY = 'farmsense_history';
-
-function loadHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY)) ?? [];
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(history) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(history));
-  } catch { /* storage quota; silently ignore */ }
-}
+import { planIrrigation } from './logic/irrigationPlanner';
+import { getHistory, saveResult } from './storage/historyStore';
 
 /* ═══════════════════════════════════════════════════════ */
 
@@ -30,48 +15,40 @@ export default function App() {
   const [page,              setPage]              = useState('scanner');
   const [scanResult,        setScanResult]        = useState(null);
   const [irrigationResult,  setIrrigationResult]  = useState(null);
-  const [history,           setHistory]           = useState(loadHistory);
+  const [irrigationLoading, setIrrigationLoading] = useState(false);
+  const [history,           setHistory]           = useState(getHistory);
 
   /* ── Scan handler ───────────────────────────────────── */
   const handleScanResult = useCallback((result) => {
-    const entry = { ...result, timestamp: Date.now() };
-
-    setHistory((prev) => {
-      const updated = [...prev, entry];
-      saveHistory(updated);
-      return updated;
-    });
+    const entry = saveResult(result);
+    setHistory(getHistory());
 
     setScanResult(entry);
   }, []);
 
   /* ── Irrigation handler ─────────────────────────────── */
-  const handleIrrigationSubmit = useCallback((formValues) => {
-    const et0 = 4.8;
-    const stageKc = {
-      Early: 0.7,
-      Mid: 1.0,
-      Late: 0.85,
-    };
-    const soilFactor = {
-      Sandy: 1.15,
-      Loam: 1.0,
-      Clay: 0.9,
-    };
+  const handleIrrigationSubmit = useCallback(async (formValues) => {
+    setIrrigationLoading(true);
+    setIrrigationResult(null);
 
-    const kc = stageKc[formValues.stage] ?? 1.0;
-    const factor = soilFactor[formValues.soil] ?? 1.0;
-    const mockPlan = {
-      crop: formValues.crop,
-      stage: formValues.stage,
-      et0,
-      kc,
-      water_needed_mm: Number((et0 * kc * factor).toFixed(1)),
-      weather_cached: true,
-    };
+    try {
+      const plan = await planIrrigation({
+        crop: formValues.crop,
+        stage: formValues.stage,
+        soilMoisture: Math.max(0, Math.min(100, Number(formValues.soilMoisture))) / 100,
+        lat: Number(formValues.lat),
+        lon: Number(formValues.lon),
+        apiKey: formValues.apiKey,
+      });
 
-    setIrrigationResult(mockPlan);
-    return mockPlan;
+      setIrrigationResult(plan);
+      return plan;
+    } catch (err) {
+      console.error('[App] Irrigation planning failed:', err);
+      throw err;
+    } finally {
+      setIrrigationLoading(false);
+    }
   }, []);
 
   /* ── Page titles ────────────────────────────────────── */
@@ -95,7 +72,7 @@ export default function App() {
             </svg>
           </div>
           <div className="app-header__text">
-            <h1 className="app-header__title">FarmSense</h1>
+            <h1 className="app-header__title">Agri-Netra</h1>
             <p className="app-header__sub">{PAGE_TITLE[page]}</p>
           </div>
         </div>
@@ -122,7 +99,7 @@ export default function App() {
                 prevention: scanResult.prevention ?? 'Monitor crops regularly and maintain field hygiene.',
               }} />
             )}
-            <IrrigationForm onSubmit={handleIrrigationSubmit} />
+            <IrrigationForm onSubmit={handleIrrigationSubmit} loading={irrigationLoading} />
             {irrigationResult && (
               <IrrigationResult result={irrigationResult} />
             )}
@@ -132,7 +109,7 @@ export default function App() {
         {/* Irrigation page */}
         {page === 'irrigation' && (
           <>
-            <IrrigationForm onSubmit={handleIrrigationSubmit} />
+            <IrrigationForm onSubmit={handleIrrigationSubmit} loading={irrigationLoading} />
             {irrigationResult && (
               <IrrigationResult result={irrigationResult} />
             )}

@@ -1,16 +1,64 @@
-# React + Vite
+# Agri-Netra (Gaslighters)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Agri-Netra is a React + Vite web app for crop support workflows:
 
-Currently, two official plugins are available:
+- Crop image disease scanning (TensorFlow.js model in-browser)
+- Disease result mapping with treatment and prevention guidance
+- Irrigation planning using weather data + FAO-style ET logic
+- Local dashboard history persisted in `localStorage`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
 
-## React Compiler
+- React 19
+- Vite 8
+- TensorFlow.js (`@tensorflow/tfjs`)
+- OpenWeatherMap API (for irrigation weather inputs)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Quick Start
 
-## Expanding the ESLint configuration
+```bash
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Open the local URL printed by Vite (usually `http://localhost:5173`).
+
+## Environment Variables
+
+Create a `.env` file in the project root (`Gaslighters/.env`):
+
+```bash
+VITE_OPENWEATHERMAP_API_KEY=your_openweathermap_api_key
+```
+
+Notes:
+
+- Current irrigation flow accepts API key input from the form as well.
+- Keeping the key in `.env` is still recommended for easier local setup and future wiring.
+
+## Add the TensorFlow.js Model
+
+`useModel` loads the model from:
+
+- `/model/model.json`
+
+So place model artifacts under `public/model/`:
+
+```text
+public/model/
+  model.json
+  group1-shard1of4.bin
+  group1-shard2of4.bin
+  group1-shard3of4.bin
+  group1-shard4of4.bin
+  class_indices.json
+```
+
+`class_indices.json` is used to map predicted class indices to class names at startup.
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```

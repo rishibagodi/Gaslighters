@@ -16,7 +16,7 @@
 export default function IrrigationResult({ result }) {
   if (!result) return null;
 
-  const { crop, stage, et0, kc, water_needed_mm, weather_cached } = result;
+  const { crop, stage, et0, kc, water_needed_mm, weather_cached, notes, weather } = result;
 
   /* Derived label colour for water amount */
   const waterLevel =
@@ -58,6 +58,20 @@ export default function IrrigationResult({ result }) {
         </div>
         <h2 className="irr-result__section-label">Irrigation Recommendation</h2>
       </div>
+
+      {/* ── Advisory note ───────────────────────────── */}
+      {notes && (
+        <div className="irr-result__warning" role="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>{notes}</span>
+        </div>
+      )}
 
       {/* ── Hero: water needed ─────────────────────── */}
       <div className="irr-result__hero">
@@ -113,6 +127,33 @@ export default function IrrigationResult({ result }) {
         />
 
       </div>
+
+      {/* ── Weather summary ────────────────────────── */}
+      {weather && (
+        <div className="irr-result__grid" role="list" aria-label="Current weather summary">
+          <MetricTile
+            label="Temp"
+            value={weather.temp_c != null ? Number(weather.temp_c).toFixed(1) : '—'}
+            unit="degC"
+            description="Air temperature"
+            icon={<ET0Icon />}
+          />
+          <MetricTile
+            label="Humidity"
+            value={weather.humidity != null ? Number(weather.humidity).toFixed(0) : '—'}
+            unit="%"
+            description="Relative humidity"
+            icon={<KcIcon />}
+          />
+          <MetricTile
+            label="Wind"
+            value={weather.wind_ms != null ? Number(weather.wind_ms).toFixed(1) : '—'}
+            unit="m/s"
+            description="Wind speed"
+            icon={<ETcIcon />}
+          />
+        </div>
+      )}
 
     </article>
   );
