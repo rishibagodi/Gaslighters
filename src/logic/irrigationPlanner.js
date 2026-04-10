@@ -72,7 +72,6 @@ function currentDOY() {
  *                                        the irrigation demand.
  * @param {number}  params.lat          – Latitude (decimal degrees)
  * @param {number}  params.lon          – Longitude (decimal degrees)
- * @param {string}  params.apiKey       – OpenWeatherMap API key
  * @param {number} [params.elevation=0] – Station elevation (m) for ET₀ accuracy
  * @returns {Promise<{
  *   crop:             string,
@@ -92,11 +91,10 @@ export async function planIrrigation({
   soilMoisture = 0,
   lat,
   lon,
-  apiKey,
   elevation = 0,
 }) {
   /* 1. Fetch current weather ------------------------------------------- */
-  const weather = await getWeather(lat, lon, apiKey);
+  const weather = await getWeather(lat, lon);
 
   /* 2. Calculate reference ET₀ ----------------------------------------- */
   const doy = currentDOY();

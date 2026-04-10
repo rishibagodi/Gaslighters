@@ -5,19 +5,21 @@ const CROPS  = ['Tomato', 'Potato', 'Maize', 'Rice', 'Wheat', 'Cotton'];
 const STAGES = ['Early', 'Mid', 'Late'];
 const SOILS  = ['Sandy', 'Loam', 'Clay'];
 
-const INITIAL = { crop: '', stage: '', soil: '', lat: '', lon: '', apiKey: '', soilMoisture: '' };
+const INITIAL = { crop: '', stage: '', soil: '', lat: '', lon: '', soilMoisture: '' };
 
 /**
  * IrrigationForm
  *
  * @param {{
- *   onSubmit: (values: { crop: string, stage: string, soil: string, lat: string, lon: string, apiKey: string, soilMoisture: string }) => void,
+ *   onSubmit: (values: { crop: string, stage: string, soil: string, lat: string, lon: string, soilMoisture: string }) => void,
  *   loading:  boolean,
  * }} props
  */
 export default function IrrigationForm({ onSubmit, loading = false }) {
   const [values, setValues] = useState(INITIAL);
   const [touched, setTouched] = useState({});
+  const [locating, setLocating] = useState(false);
+  const [locationMessage, setLocationMessage] = useState('Location not set.');
 
   const isComplete =
     values.crop &&
@@ -25,7 +27,6 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
     values.soil &&
     values.lat.trim() &&
     values.lon.trim() &&
-    values.apiKey.trim() &&
     values.soilMoisture !== '';
 
   const handleChange = (field) => (e) => {
@@ -37,6 +38,33 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
     e.preventDefault();
     if (!isComplete || loading) return;
     onSubmit?.(values);
+  };
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationMessage('Geolocation is not supported on this device/browser.');
+      return;
+    }
+
+    setLocating(true);
+    setLocationMessage('Fetching your location...');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toFixed(6);
+        const lon = position.coords.longitude.toFixed(6);
+
+        setValues((prev) => ({ ...prev, lat, lon }));
+        setTouched((prev) => ({ ...prev, lat: true, lon: true }));
+        setLocationMessage('Location captured successfully.');
+        setLocating(false);
+      },
+      (error) => {
+        setLocationMessage(`Unable to get location: ${error.message}`);
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   return (
@@ -93,40 +121,20 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
           options={SOILS}
         />
 
-        <InputField
-          id="irr-lat"
-          label="Latitude"
-          icon={<CoordsIcon />}
-          value={values.lat}
-          onChange={handleChange('lat')}
-          touched={touched.lat}
-          placeholder="e.g. 20.5937"
-          type="number"
-          step="any"
-        />
-
-        <InputField
-          id="irr-lon"
-          label="Longitude"
-          icon={<CoordsIcon />}
-          value={values.lon}
-          onChange={handleChange('lon')}
-          touched={touched.lon}
-          placeholder="e.g. 78.9629"
-          type="number"
-          step="any"
-        />
-
-        <InputField
-          id="irr-api-key"
-          label="Weather API Key"
-          icon={<KeyIcon />}
-          value={values.apiKey}
-          onChange={handleChange('apiKey')}
-          touched={touched.apiKey}
-          placeholder="Enter OpenWeather API key"
-          type="text"
-        />
+        <details className="irr-advanced" open>
+          <summary className="irr-advanced__summary">Advanced / Location</summary>
+          <div className="irr-advanced__content">
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={handleUseMyLocation}
+              disabled={loading || locating}
+            >
+              {locating ? 'Getting location...' : 'Use My Location'}
+            </button>
+            <p className="irr-field__error-msg" role="status">{locationMessage}</p>
+          </div>
+        </details>
 
         <InputField
           id="irr-soil-moisture"
@@ -271,25 +279,6 @@ function SoilIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 17h18M3 12h18M3 7h18"/>
-    </svg>
-  );
-}
-
-function CoordsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2v20M2 12h20"/>
-    </svg>
-  );
-}
-
-function KeyIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8" cy="15" r="4"/>
-      <path d="M12 15h9M18 15v3M21 15v2"/>
     </svg>
   );
 }

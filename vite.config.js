@@ -8,4 +8,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api/weather': {
+        // Forward API calls from Vite dev server to local serverless runtime (e.g. `vercel dev`)
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
 })

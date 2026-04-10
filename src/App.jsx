@@ -38,7 +38,6 @@ export default function App() {
         soilMoisture: Math.max(0, Math.min(100, Number(formValues.soilMoisture))) / 100,
         lat: Number(formValues.lat),
         lon: Number(formValues.lon),
-        apiKey: formValues.apiKey,
       });
 
       setIrrigationResult(plan);

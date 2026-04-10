@@ -128,7 +128,6 @@ async function runTests() {
       soilMoisture: 0.3,
       lat: 28.6139,
       lon: 77.209,
-      apiKey: 'DUMMY_KEY_FOR_TESTING',
       elevation: 216,
     });
     console.log('  Crop          :', plan.crop);

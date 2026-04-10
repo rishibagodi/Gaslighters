@@ -12,7 +12,7 @@ Agri-Netra is a React + Vite web app for crop support workflows:
 - React 19
 - Vite 8
 - TensorFlow.js (`@tensorflow/tfjs`)
-- OpenWeatherMap API (for irrigation weather inputs)
+- OpenWeatherMap API via server proxy (`/api/weather`)
 
 ## Quick Start
 
@@ -28,13 +28,20 @@ Open the local URL printed by Vite (usually `http://localhost:5173`).
 Create a `.env` file in the project root (`Gaslighters/.env`):
 
 ```bash
-VITE_OPENWEATHERMAP_API_KEY=your_openweathermap_api_key
+OPENWEATHER_API_KEY=your_openweathermap_api_key
 ```
 
 Notes:
 
-- Current irrigation flow accepts API key input from the form as well.
-- Keeping the key in `.env` is still recommended for easier local setup and future wiring.
+- This key is read by the serverless weather proxy in `api/weather.js`.
+- Do not prefix with `VITE_` (that would expose it to the browser bundle).
+- During local dev, use a runtime that supports the serverless function route (for example `vercel dev`) or provide an equivalent `/api/weather` backend route.
+
+## Irrigation Location
+
+- The irrigation form includes a `Use My Location` action.
+- It uses `navigator.geolocation.getCurrentPosition()` and stores coordinates internally.
+- Latitude/longitude are sent to `planIrrigation()` automatically; users do not need to enter API keys in the UI.
 
 ## Add the TensorFlow.js Model
 
