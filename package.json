@@ -31,5 +31,8 @@
     "tailwindcss": "^4.2.2",
     "vite": "^8.0.4",
     "vite-plugin-pwa": "^1.2.0"
+  },
+  "overrides": {
+    "react-is": "^18.0.0"
   }
 }
