@@ -66,7 +66,7 @@ function estimateSolarRadiation(cloudPercent) {
 }
 
 /**
- * Fetch current weather through the app's weather proxy.
+ * Fetch current weather directly from OpenWeatherMap.
  *
  * @param {number} lat      – Latitude
  * @param {number} lon      – Longitude
@@ -79,11 +79,13 @@ export async function getWeather(lat, lon) {
     return { ...cached, weather_cached: true };
   }
 
-  // 2. Fetch from server proxy (which injects OPENWEATHER_API_KEY)
+  // 2. Fetch directly from OpenWeatherMap
   const url =
-    `/api/weather` +
+    `https://api.openweathermap.org/data/2.5/weather` +
     `?lat=${encodeURIComponent(lat)}` +
-    `&lon=${encodeURIComponent(lon)}`;
+    `&lon=${encodeURIComponent(lon)}` +
+    `&appid=d49260283f0533aa92330fe3ccca0a37` +
+    `&units=metric`;
 
   const response = await fetch(url);
 

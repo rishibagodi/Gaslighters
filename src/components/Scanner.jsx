@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import useModel from '../hooks/useModel';
 import useCamera from '../hooks/useCamera';
 import preprocessImage from '../utils/preprocessImage';
@@ -14,11 +14,107 @@ import { mapPrediction } from '../logic/predictionMapper';
  */
 export default function Scanner({ onResult }) {
   const { model, loading: modelLoading, error: modelError } = useModel();
-  const { preview, handleFileUpload, triggerUpload, fileRef } = useCamera();
+  const { preview, handleFileUpload } = useCamera();
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+  const fileRef = useRef(null);
 
   const [scanning,   setScanning]   = useState(false);
   const [scanError,  setScanError]  = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+
+  const stopCameraStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  const closeCameraModal = useCallback(() => {
+    stopCameraStream();
+    setCameraOpen(false);
+  }, [stopCameraStream]);
+
+  const openCamera = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError('Camera API is not supported in this browser.');
+      return;
+    }
+
+    setCameraError(null);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+
+      streamRef.current = stream;
+      setCameraOpen(true);
+
+      // Wait for modal/video to render before binding stream.
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {
+            setCameraError('Unable to start camera preview.');
+          });
+        }
+      }, 300);
+    } catch (error) {
+      setCameraError(error instanceof Error ? error.message : 'Unable to access camera.');
+      stopCameraStream();
+    }
+  }, [stopCameraStream]);
+
+  const openFilePicker = useCallback(() => {
+    fileRef.current?.click();
+  }, []);
+
+  const captureFromCamera = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const attemptCapture = (didRetry) => {
+      if (video.readyState < 2) {
+        if (!didRetry) {
+          setTimeout(() => attemptCapture(true), 200);
+          return;
+        }
+        setCameraError('Camera is still warming up. Please try again.');
+        return;
+      }
+
+      const width = video.videoWidth || 1280;
+      const height = video.videoHeight || 720;
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      context.drawImage(video, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          setCameraError('Failed to capture image. Please try again.');
+          return;
+        }
+
+        const capturedFile = new File([blob], 'capture.jpg', { type: blob.type || 'image/jpeg' });
+        handleFileUpload({ target: { files: [capturedFile], value: '' } });
+        closeCameraModal();
+      }, 'image/jpeg', 0.95);
+    };
+
+    attemptCapture(false);
+  }, [handleFileUpload, closeCameraModal]);
 
   /* ── Drag-and-drop handlers ── */
   const handleDragOver  = (e) => { e.preventDefault(); setIsDragOver(true);  };
@@ -113,27 +209,27 @@ export default function Scanner({ onResult }) {
         </div>
       )}
 
-      {/* Hidden file input */}
+      {/* Hidden upload input + hidden capture canvas */}
       <input
         ref={fileRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileUpload}
         style={{ display: 'none' }}
         aria-hidden="true"
       />
+      <canvas ref={canvasRef} style={{ display: 'none' }} aria-hidden="true" />
 
       {/* Upload / Preview box */}
       <div
         className={`upload-box ${isDragOver ? 'upload-box--dragover' : ''} ${preview ? 'upload-box--has-preview' : ''}`}
-        onClick={!preview ? triggerUpload : undefined}
+        onClick={!preview ? openFilePicker : undefined}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         role={!preview ? 'button' : undefined}
         tabIndex={!preview ? 0 : undefined}
-        onKeyDown={(e) => { if (!preview && (e.key === 'Enter' || e.key === ' ')) triggerUpload(); }}
+        onKeyDown={(e) => { if (!preview && (e.key === 'Enter' || e.key === ' ')) openFilePicker(); }}
         aria-label={!preview ? 'Upload or drag an image' : 'Image preview'}
       >
         {preview ? (
@@ -158,16 +254,23 @@ export default function Scanner({ onResult }) {
 
       {/* Action buttons */}
       <div className="scanner-actions">
-        {preview && (
-          <button
-            className="btn btn--secondary"
-            onClick={triggerUpload}
-            disabled={scanning}
-            aria-label="Choose a different image"
-          >
-            Change Image
-          </button>
-        )}
+        <button
+          className="btn btn--secondary"
+          onClick={openCamera}
+          disabled={scanning}
+          aria-label="Capture image with camera"
+        >
+          Use Camera
+        </button>
+
+        <button
+          className="btn btn--secondary"
+          onClick={openFilePicker}
+          disabled={scanning}
+          aria-label="Upload photo from files"
+        >
+          Upload Photo
+        </button>
 
         <button
           className={`btn btn--primary ${scanning ? 'btn--loading' : ''}`}
@@ -191,6 +294,45 @@ export default function Scanner({ onResult }) {
       {scanError && (
         <p className="scan-error" role="alert">
           ⚠ {scanError}
+        </p>
+      )}
+
+      {/* Camera modal */}
+      {cameraOpen && (
+        <div className="camera-modal" role="dialog" aria-modal="true" aria-label="Camera capture">
+          <div className="camera-modal__panel">
+            <video
+              ref={videoRef}
+              className="camera-modal__video"
+              playsInline
+              muted
+              autoPlay
+              onLoadedMetadata={() => {
+                videoRef.current?.play().catch(() => {
+                  setCameraError('Unable to start camera preview.');
+                });
+              }}
+              onCanPlay={() => {
+                videoRef.current?.play().catch(() => {
+                  setCameraError('Unable to start camera preview.');
+                });
+              }}
+            />
+            <div className="camera-modal__actions">
+              <button className="btn btn--primary" type="button" onClick={captureFromCamera}>
+                Capture
+              </button>
+              <button className="btn btn--secondary" type="button" onClick={closeCameraModal}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cameraError && (
+        <p className="scan-error" role="alert">
+          ⚠ {cameraError}
         </p>
       )}
     </div>
