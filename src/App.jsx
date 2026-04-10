@@ -6,7 +6,6 @@ import ResultCard      from './components/ResultCard';
 import Dashboard       from './components/Dashboard';
 import IrrigationForm  from './components/IrrigationForm';
 import IrrigationResult from './components/IrrigationResult';
-import { getIrrigationPlan } from './logic/irrigationPlanner';
 
 /* ── localStorage helpers ──────────────────────────────── */
 const LS_KEY = 'farmsense_history';
@@ -31,7 +30,6 @@ export default function App() {
   const [page,              setPage]              = useState('scanner');
   const [scanResult,        setScanResult]        = useState(null);
   const [irrigationResult,  setIrrigationResult]  = useState(null);
-  const [irrigationLoading, setIrrigationLoading] = useState(false);
   const [history,           setHistory]           = useState(loadHistory);
 
   /* ── Scan handler ───────────────────────────────────── */
@@ -48,17 +46,32 @@ export default function App() {
   }, []);
 
   /* ── Irrigation handler ─────────────────────────────── */
-  const handleIrrigationSubmit = useCallback(async (formValues) => {
-    setIrrigationLoading(true);
-    setIrrigationResult(null);
-    try {
-      const plan = await getIrrigationPlan(formValues);
-      setIrrigationResult(plan);
-    } catch (err) {
-      console.error('[App] Irrigation plan error:', err);
-    } finally {
-      setIrrigationLoading(false);
-    }
+  const handleIrrigationSubmit = useCallback((formValues) => {
+    const et0 = 4.8;
+    const stageKc = {
+      Early: 0.7,
+      Mid: 1.0,
+      Late: 0.85,
+    };
+    const soilFactor = {
+      Sandy: 1.15,
+      Loam: 1.0,
+      Clay: 0.9,
+    };
+
+    const kc = stageKc[formValues.stage] ?? 1.0;
+    const factor = soilFactor[formValues.soil] ?? 1.0;
+    const mockPlan = {
+      crop: formValues.crop,
+      stage: formValues.stage,
+      et0,
+      kc,
+      water_needed_mm: Number((et0 * kc * factor).toFixed(1)),
+      weather_cached: true,
+    };
+
+    setIrrigationResult(mockPlan);
+    return mockPlan;
   }, []);
 
   /* ── Page titles ────────────────────────────────────── */
@@ -109,16 +122,17 @@ export default function App() {
                 prevention: scanResult.prevention ?? 'Monitor crops regularly and maintain field hygiene.',
               }} />
             )}
+            <IrrigationForm onSubmit={handleIrrigationSubmit} />
+            {irrigationResult && (
+              <IrrigationResult result={irrigationResult} />
+            )}
           </>
         )}
 
         {/* Irrigation page */}
         {page === 'irrigation' && (
           <>
-            <IrrigationForm
-              onSubmit={handleIrrigationSubmit}
-              loading={irrigationLoading}
-            />
+            <IrrigationForm onSubmit={handleIrrigationSubmit} />
             {irrigationResult && (
               <IrrigationResult result={irrigationResult} />
             )}
