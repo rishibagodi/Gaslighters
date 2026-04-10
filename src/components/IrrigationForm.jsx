@@ -4,6 +4,7 @@ import { useState } from 'react';
 const CROPS  = ['Tomato', 'Potato', 'Maize', 'Rice', 'Wheat', 'Cotton'];
 const STAGES = ['Early', 'Mid', 'Late'];
 const SOILS  = ['Sandy', 'Loam', 'Clay'];
+const MOISTURE_LEVELS = ['Dry', 'Moist', 'Wet'];
 
 const INITIAL = { crop: '', stage: '', soil: '', lat: '', lon: '', soilMoisture: '' };
 
@@ -19,7 +20,8 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
   const [values, setValues] = useState(INITIAL);
   const [touched, setTouched] = useState({});
   const [locating, setLocating] = useState(false);
-  const [locationMessage, setLocationMessage] = useState('Location not set.');
+  const [locationDetected, setLocationDetected] = useState(false);
+  const [locationError, setLocationError] = useState('');
 
   const isComplete =
     values.crop &&
@@ -42,12 +44,14 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
-      setLocationMessage('Geolocation is not supported on this device/browser.');
+      setLocationDetected(false);
+      setLocationError('Geolocation is not supported on this device/browser.');
       return;
     }
 
     setLocating(true);
-    setLocationMessage('Fetching your location...');
+    setLocationError('');
+    setLocationDetected(false);
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -56,11 +60,13 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
 
         setValues((prev) => ({ ...prev, lat, lon }));
         setTouched((prev) => ({ ...prev, lat: true, lon: true }));
-        setLocationMessage('Location captured successfully.');
+        setLocationDetected(true);
+        setLocationError('');
         setLocating(false);
       },
       (error) => {
-        setLocationMessage(`Unable to get location: ${error.message}`);
+        setLocationDetected(false);
+        setLocationError(`Unable to get location: ${error.message}`);
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -132,22 +138,24 @@ export default function IrrigationForm({ onSubmit, loading = false }) {
             >
               {locating ? 'Getting location...' : 'Use My Location'}
             </button>
-            <p className="irr-field__error-msg" role="status">{locationMessage}</p>
+            {locationDetected && (
+              <p className="irr-field__error-msg" role="status">Location detected ✓</p>
+            )}
+            {locationError && (
+              <p className="irr-field__error-msg" role="alert">{locationError}</p>
+            )}
           </div>
         </details>
 
-        <InputField
+        <SelectField
           id="irr-soil-moisture"
-          label="Current Soil Moisture (%)"
+          label="Current Soil Moisture"
           icon={<SoilIcon />}
           value={values.soilMoisture}
           onChange={handleChange('soilMoisture')}
           touched={touched.soilMoisture}
-          placeholder="e.g. 35"
-          type="number"
-          min="0"
-          max="100"
-          step="1"
+          placeholder="Select moisture level"
+          options={MOISTURE_LEVELS}
         />
 
       </div>
@@ -215,38 +223,6 @@ function SelectField({ id, label, icon, value, onChange, touched, placeholder, o
       {isError && (
         <p id={`${id}-error`} className="irr-field__error-msg" role="alert">
           Please select a {label.toLowerCase()}.
-        </p>
-      )}
-    </div>
-  );
-}
-
-function InputField({ id, label, icon, value, onChange, touched, placeholder, type = 'text', step, min, max }) {
-  const isError = touched && !String(value ?? '').trim();
-
-  return (
-    <div className={`irr-field ${isError ? 'irr-field--error' : ''} ${value ? 'irr-field--filled' : ''}`}>
-      <label className="irr-field__label" htmlFor={id}>{label}</label>
-      <div className="irr-field__wrapper">
-        <span className="irr-field__icon" aria-hidden="true">{icon}</span>
-        <input
-          id={id}
-          className="irr-field__select"
-          type={type}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          aria-invalid={isError}
-          aria-describedby={isError ? `${id}-error` : undefined}
-          step={step}
-          min={min}
-          max={max}
-          required
-        />
-      </div>
-      {isError && (
-        <p id={`${id}-error`} className="irr-field__error-msg" role="alert">
-          Please enter {label.toLowerCase()}.
         </p>
       )}
     </div>

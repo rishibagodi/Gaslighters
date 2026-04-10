@@ -16,6 +16,7 @@ export default function App() {
   const [scanResult,        setScanResult]        = useState(null);
   const [irrigationResult,  setIrrigationResult]  = useState(null);
   const [irrigationLoading, setIrrigationLoading] = useState(false);
+  const [irrigationError,   setIrrigationError]   = useState(null);
   const [history,           setHistory]           = useState(getHistory);
 
   /* ── Scan handler ───────────────────────────────────── */
@@ -28,23 +29,32 @@ export default function App() {
 
   /* ── Irrigation handler ─────────────────────────────── */
   const handleIrrigationSubmit = useCallback(async (formValues) => {
+    const moistureToPercent = {
+      Dry: 20,
+      Moist: 50,
+      Wet: 80,
+    };
+
     setIrrigationLoading(true);
+    setIrrigationError(null);
     setIrrigationResult(null);
 
     try {
       const plan = await planIrrigation({
         crop: formValues.crop,
         stage: formValues.stage,
-        soilMoisture: Math.max(0, Math.min(100, Number(formValues.soilMoisture))) / 100,
+        soilMoisture: (moistureToPercent[formValues.soilMoisture] ?? 50) / 100,
         lat: Number(formValues.lat),
         lon: Number(formValues.lon),
       });
 
       setIrrigationResult(plan);
+      setIrrigationError(null);
       return plan;
     } catch (err) {
       console.error('[App] Irrigation planning failed:', err);
-      throw err;
+      setIrrigationError(err instanceof Error ? err.message : 'Failed to generate irrigation plan.');
+      return null;
     } finally {
       setIrrigationLoading(false);
     }
@@ -99,6 +109,9 @@ export default function App() {
               }} />
             )}
             <IrrigationForm onSubmit={handleIrrigationSubmit} loading={irrigationLoading} />
+            {irrigationError && (
+              <p className="scan-error" role="alert">⚠ {irrigationError}</p>
+            )}
             {irrigationResult && (
               <IrrigationResult result={irrigationResult} />
             )}
@@ -109,6 +122,9 @@ export default function App() {
         {page === 'irrigation' && (
           <>
             <IrrigationForm onSubmit={handleIrrigationSubmit} loading={irrigationLoading} />
+            {irrigationError && (
+              <p className="scan-error" role="alert">⚠ {irrigationError}</p>
+            )}
             {irrigationResult && (
               <IrrigationResult result={irrigationResult} />
             )}

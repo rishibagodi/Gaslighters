@@ -1,5 +1,12 @@
 export default async function handler(req, res) {
+  const apiKey =
+    process.env.OPENWEATHER_API_KEY ||
+    process.env.VITE_OPENWEATHERMAP_API_KEY ||
+    process.env.OPENWEATHERMAP_API_KEY;
+
   console.log('[api/weather] OPENWEATHER_API_KEY configured:', !!process.env.OPENWEATHER_API_KEY);
+  console.log('[api/weather] VITE_OPENWEATHERMAP_API_KEY configured:', !!process.env.VITE_OPENWEATHERMAP_API_KEY);
+  console.log('[api/weather] Effective weather key configured:', !!apiKey);
 
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -15,9 +22,11 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.OPENWEATHER_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: 'Server weather key is not configured' });
+    res.status(500).json({
+      error: 'Server weather key is not configured',
+      message: 'Set OPENWEATHER_API_KEY in the server runtime environment.',
+    });
     return;
   }
 
@@ -50,10 +59,12 @@ export default async function handler(req, res) {
     res.status(200).json(json);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const cause = error instanceof Error && error.cause ? String(error.cause) : null;
     console.error('[api/weather] Weather proxy request failed:', message);
     res.status(502).json({
       error: 'Weather proxy request failed',
       message,
+      cause,
     });
   }
 }
