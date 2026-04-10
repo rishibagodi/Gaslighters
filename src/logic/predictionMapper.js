@@ -10,6 +10,8 @@
 import { DISEASE_LABELS } from '../data/diseaseLabels.js';
 import { TREATMENT_DB } from '../data/treatmentDB.js';
 
+let runtimeLabels = [...DISEASE_LABELS];
+
 /* ───────── Severity thresholds ───────── */
 
 /**
@@ -32,6 +34,42 @@ function deriveSeverity(confidence, isHealthy) {
   return 'Uncertain';
 }
 
+function normalizeClassIndexMap(indexMap) {
+  if (!indexMap || typeof indexMap !== 'object') return [];
+
+  return Object.entries(indexMap)
+    .map(([key, value]) => ({
+      index: Number.parseInt(key, 10),
+      label: typeof value === 'string' ? value : '',
+    }))
+    .filter((entry) => Number.isInteger(entry.index) && entry.index >= 0 && entry.label)
+    .sort((a, b) => a.index - b.index)
+    .map((entry) => entry.label);
+}
+
+/**
+ * Loads class labels once at startup from /model/class_indices.json.
+ * Falls back to static labels if the fetch fails.
+ */
+export async function initializePredictionLabels() {
+  try {
+    const response = await fetch('/model/class_indices.json');
+    if (!response.ok) {
+      throw new Error(`Failed to load class indices: HTTP ${response.status}`);
+    }
+
+    const indexMap = await response.json();
+    const labels = normalizeClassIndexMap(indexMap);
+
+    if (labels.length > 0) {
+      runtimeLabels = labels;
+    }
+  } catch (err) {
+    console.error('[predictionMapper] Using fallback labels:', err);
+    runtimeLabels = [...DISEASE_LABELS];
+  }
+}
+
 /**
  * Map a model prediction to a structured result.
  *
@@ -52,14 +90,14 @@ function deriveSeverity(confidence, isHealthy) {
  */
 export function mapPrediction(index, probabilitiesArray) {
   /* 1. Validate index --------------------------------------------------- */
-  if (index < 0 || index >= DISEASE_LABELS.length) {
+  if (index < 0 || index >= runtimeLabels.length) {
     throw new RangeError(
-      `Prediction index ${index} is out of range (0–${DISEASE_LABELS.length - 1}).`
+      `Prediction index ${index} is out of range (0–${runtimeLabels.length - 1}).`
     );
   }
 
   /* 2. Look up label & confidence -------------------------------------- */
-  const label = DISEASE_LABELS[index];
+  const label = runtimeLabels[index];
   const confidence = probabilitiesArray?.[index] ?? 0;
   const isHealthy = label.toLowerCase().includes('healthy');
 
@@ -78,7 +116,10 @@ export function mapPrediction(index, probabilitiesArray) {
   /* 5. Top-K predictions (useful for differential diagnosis) ------------ */
   const topK = probabilitiesArray
     ? [...probabilitiesArray]
-        .map((prob, i) => ({ label: DISEASE_LABELS[i], probability: prob }))
+        .map((prob, i) => ({
+          label: runtimeLabels[i] ?? DISEASE_LABELS[i] ?? `Class ${i}`,
+          probability: prob,
+        }))
         .sort((a, b) => b.probability - a.probability)
         .slice(0, 5)
     : [{ label, probability: confidence }];

@@ -1,24 +1,37 @@
-const NUM_CLASSES = 38;
-const TOP_INDEX = 15;
-
-function makeMockScores() {
-  const scores = Array(NUM_CLASSES).fill(0);
-  scores[TOP_INDEX] = 0.95;
-  return scores;
-}
-
-const mockModel = {
-  predict() {
-    return makeMockScores();
-  },
-};
+import { useEffect, useState } from 'react';
+import * as tf from '@tensorflow/tfjs';
 
 function useModel() {
-  return {
-    model: mockModel,
-    loading: false,
-    error: null,
-  };
+  const [model, setModel] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadModel() {
+      try {
+        const loadedModel = await tf.loadLayersModel('/model/model.json');
+        if (!isMounted) return;
+        setModel(loadedModel);
+      } catch (err) {
+        if (!isMounted) return;
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadModel();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { model, loading, error };
 }
 
 export default useModel;

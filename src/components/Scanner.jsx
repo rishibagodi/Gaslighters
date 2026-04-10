@@ -2,32 +2,7 @@ import { useState, useCallback } from 'react';
 import useModel from '../hooks/useModel';
 import useCamera from '../hooks/useCamera';
 import preprocessImage from '../utils/preprocessImage';
-
-/* ── Mock label map (replace with real labels once model is ready) ── */
-const MOCK_LABELS = [
-  'Healthy',
-  'Bacterial Blight',
-  'Brown Spot',
-  'Leaf Blast',
-  'Neck Blast',
-  'Sheath Blight',
-  'Tungro',
-];
-
-/**
- * mockPredict
- * Converts a raw class index into a human-readable result object.
- * Swap this out when the real label map is available.
- *
- * @param {number} topIndex
- * @returns {{ label: string, confidence: number }}
- */
-function mockPredict(topIndex, scores) {
-  return {
-    label:      MOCK_LABELS[topIndex] ?? `Class ${topIndex}`,
-    confidence: scores ? Math.round(scores[topIndex] * 100) : null,
-  };
-}
+import { mapPrediction } from '../logic/predictionMapper';
 
 /* ─────────────────────────────────────────────────────────────────── */
 
@@ -79,17 +54,35 @@ export default function Scanner({ onResult }) {
       tensor = await preprocessImage(file);
 
       // Run inference
-      const output  = model.predict(tensor);
-      const scores  = await output.data(); // Float32Array
-      output.dispose();
+      const predictions = model.predict(tensor);
+      if (!predictions || typeof predictions.data !== 'function') {
+        throw new Error('Model output is not a tensor with a data() method');
+      }
+
+      const typedScores = await predictions.data();
+      const scores = [...typedScores];
+
+      if (typeof predictions.dispose === 'function') {
+        predictions.dispose();
+      }
+      console.log('Scores:', scores);
+
+      tensor.dispose();
+      tensor = null;
 
       // Top class index
       const topIndex = scores.indexOf(Math.max(...scores));
 
-      // Resolve label via mock (swap with real labelmap later)
-      const result = mockPredict(topIndex, scores);
+      const mapped = mapPrediction(topIndex, scores);
 
-      onResult?.(result);
+      onResult?.({
+        ...mapped,
+        // Preserve existing App/ResultCard expectations.
+        label: mapped.disease,
+        confidence: mapped.confidence * 100,
+        treatment: Array.isArray(mapped.treatment) ? mapped.treatment.join(' ') : mapped.treatment,
+        prevention: Array.isArray(mapped.prevention) ? mapped.prevention.join(' ') : mapped.prevention,
+      });
     } catch (err) {
       console.error('[Scanner] Inference error:', err);
       setScanError(err instanceof Error ? err.message : String(err));
