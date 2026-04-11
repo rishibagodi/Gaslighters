@@ -1,10 +1,3 @@
-/**
- * Treatment Database
- * ──────────────────
- * Complete entries for all 38 PlantVillage dataset classes.
- * Keys match class_indices.json labels exactly.
- */
-
 export const TREATMENT_DB = {
     "Apple___Apple_scab": {
         displayName: "Apple Scab",

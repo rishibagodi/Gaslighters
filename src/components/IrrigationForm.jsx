@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { CROP_COEFFICIENTS } from '../data/cropCoefficients';
 
 /* ── Option lists ──────────────────────────────────────── */
-const CROPS  = ['Tomato', 'Potato', 'Maize', 'Rice', 'Wheat', 'Cotton'];
+const CROPS  = Object.keys(CROP_COEFFICIENTS);
 const STAGES = ['Early', 'Mid', 'Late'];
 const SOILS  = ['Sandy', 'Loam', 'Clay'];
 const MOISTURE_LEVELS = ['Dry', 'Moist', 'Wet'];

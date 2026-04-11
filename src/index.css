@@ -687,27 +687,28 @@ h6 {
   width: 100%;
   appearance: none;
   -webkit-appearance: none;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.625rem;
-  color: var(--color-text);
+  -moz-appearance: none;
+  background: #F5F0E8;
+  border: 1.5px solid #2D6A4F;
+  border-radius: 0.5rem;
+  color: #1A1A2E;
   font-family: var(--font-sans);
   font-size: 0.9rem;
-  padding: 0.65rem 2.5rem 0.65rem 2.5rem;
+  padding: 0.75rem 2.5rem 0.75rem 2.5rem;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .irr-field__select option {
-  background: #1e293b;
-  color: var(--color-text);
+  background: #F5F0E8;
+  color: #1A1A2E;
 }
 
 .irr-field__select:focus {
   outline: none;
-  border-color: var(--color-primary);
-  background: rgba(22, 163, 74, 0.07);
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+  border-color: #D4A843;
+  background: #F5F0E8;
+  box-shadow: none;
 }
 
 .irr-field__select:focus + .irr-field__chevron,
@@ -742,7 +743,7 @@ h6 {
   right: 0.875rem;
   display: flex;
   align-items: center;
-  color: var(--color-muted);
+  color: #2D6A4F;
   pointer-events: none;
   transition: color 0.2s ease;
 }

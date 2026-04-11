@@ -170,7 +170,7 @@ export default function Scanner({ onResult }) {
       const maxConfidence = Math.max(...scores);
       const topIndex = scores.indexOf(maxConfidence);
 
-      if (maxConfidence < 0.7) {
+      if (maxConfidence < 0.85) {
         setScanError('Could not identify a crop disease. Please upload a clear photo of a plant leaf.');
         onResult?.(null);
         return;
@@ -227,37 +227,130 @@ export default function Scanner({ onResult }) {
       />
       <canvas ref={canvasRef} style={{ display: 'none' }} aria-hidden="true" />
 
-      {/* Upload / Preview box */}
-      <div
-        className={`upload-box ${isDragOver ? 'upload-box--dragover' : ''} ${preview ? 'upload-box--has-preview' : ''}`}
-        onClick={!preview ? openFilePicker : undefined}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        role={!preview ? 'button' : undefined}
-        tabIndex={!preview ? 0 : undefined}
-        onKeyDown={(e) => { if (!preview && (e.key === 'Enter' || e.key === ' ')) openFilePicker(); }}
-        aria-label={!preview ? 'Upload or drag an image' : 'Image preview'}
-      >
-        {preview ? (
-          <img
-            src={preview}
-            alt="Selected crop"
-            className="upload-box__preview"
+      {/* Upload / Preview box (hidden when camera is open) */}
+      {!cameraOpen && (
+        <div
+          className={`upload-box ${isDragOver ? 'upload-box--dragover' : ''} ${preview ? 'upload-box--has-preview' : ''}`}
+          onClick={!preview ? openFilePicker : undefined}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          role={!preview ? 'button' : undefined}
+          tabIndex={!preview ? 0 : undefined}
+          onKeyDown={(e) => { if (!preview && (e.key === 'Enter' || e.key === ' ')) openFilePicker(); }}
+          aria-label={!preview ? 'Upload or drag an image' : 'Image preview'}
+        >
+          {preview ? (
+            <img
+              src={preview}
+              alt="Selected crop"
+              className="upload-box__preview"
+            />
+          ) : (
+            <div className="upload-box__placeholder">
+              <svg className="upload-box__icon" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0
+                     0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              <p className="upload-box__label">Tap or drag to upload a crop image</p>
+              <p className="upload-box__sublabel">JPG, PNG, WEBP · max 10 MB</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Inline camera capture area (replaces upload box when open) */}
+      {cameraOpen && (
+        <div
+          className="upload-box upload-box--camera"
+          style={{
+            display: 'block',
+            position: 'relative',
+            width: '100%',
+            minHeight: '260px',
+            overflow: 'hidden',
+          }}
+        >
+          <video
+            ref={videoRef}
+            className="camera-modal__video"
+            style={{
+              transform: 'scaleX(-1)',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+            }}
+            playsInline
+            muted
+            autoPlay
+            onLoadedMetadata={() => {
+              videoRef.current?.play().catch(() => {
+                setCameraError('Unable to start camera preview.');
+              });
+            }}
+            onCanPlay={() => {
+              videoRef.current?.play().catch(() => {
+                setCameraError('Unable to start camera preview.');
+              });
+            }}
           />
-        ) : (
-          <div className="upload-box__placeholder">
-            <svg className="upload-box__icon" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0
-                   0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-            </svg>
-            <p className="upload-box__label">Tap or drag to upload a crop image</p>
-            <p className="upload-box__sublabel">JPG, PNG, WEBP · max 10 MB</p>
+          <div
+            className="camera-modal__actions"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: '16px',
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              gap: '1rem',
+              width: '100%',
+              padding: '0 16px',
+            }}
+          >
+            <button
+              className="camera-modal__btn camera-modal__btn--capture"
+              type="button"
+              onClick={captureFromCamera}
+              style={{
+                background: '#2D6A4F',
+                color: '#FFFFFF',
+                border: '1px solid #2D6A4F',
+                borderRadius: '10px',
+                padding: '0.65rem 1.2rem',
+                minWidth: '140px',
+                minHeight: '44px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Capture
+            </button>
+            <button
+              className="camera-modal__btn camera-modal__btn--cancel"
+              type="button"
+              onClick={closeCameraModal}
+              style={{
+                background: '#FFFFFF',
+                color: '#2D6A4F',
+                border: '1px solid #2D6A4F',
+                borderRadius: '10px',
+                padding: '0.65rem 1.2rem',
+                minWidth: '140px',
+                minHeight: '44px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="scanner-actions">
@@ -306,47 +399,6 @@ export default function Scanner({ onResult }) {
         </p>
       )}
 
-      {/* Camera modal */}
-      {cameraOpen && (
-        <div className="camera-modal" role="dialog" aria-modal="true" aria-label="Camera capture">
-          <div className="camera-modal__panel">
-            <video
-              ref={videoRef}
-              className="camera-modal__video"
-              style={{ transform: 'scaleX(-1)' }}
-              playsInline
-              muted
-              autoPlay
-              onLoadedMetadata={() => {
-                videoRef.current?.play().catch(() => {
-                  setCameraError('Unable to start camera preview.');
-                });
-              }}
-              onCanPlay={() => {
-                videoRef.current?.play().catch(() => {
-                  setCameraError('Unable to start camera preview.');
-                });
-              }}
-            />
-            <div className="camera-modal__actions">
-              <button
-                className="btn btn--primary camera-modal__btn camera-modal__btn--capture"
-                type="button"
-                onClick={captureFromCamera}
-              >
-                Capture
-              </button>
-              <button
-                className="btn btn--secondary camera-modal__btn camera-modal__btn--cancel"
-                type="button"
-                onClick={closeCameraModal}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {cameraError && (
         <p className="scan-error" role="alert">
