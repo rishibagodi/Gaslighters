@@ -170,8 +170,9 @@ export default function Scanner({ onResult }) {
       const maxConfidence = Math.max(...scores);
       const topIndex = scores.indexOf(maxConfidence);
 
-      if (maxConfidence < 0.4) {
+      if (maxConfidence < 0.7) {
         setScanError('Could not identify a crop disease. Please upload a clear photo of a plant leaf.');
+        onResult?.(null);
         return;
       }
 
@@ -260,26 +261,28 @@ export default function Scanner({ onResult }) {
 
       {/* Action buttons */}
       <div className="scanner-actions">
-        <button
-          className="btn btn--secondary"
-          onClick={openCamera}
-          disabled={scanning}
-          aria-label="Capture image with camera"
-        >
-          Use Camera
-        </button>
+        <div className="scanner-actions__row">
+          <button
+            className="btn btn--secondary"
+            onClick={openCamera}
+            disabled={scanning}
+            aria-label="Capture image with camera"
+          >
+            Use Camera
+          </button>
+
+          <button
+            className="btn btn--secondary"
+            onClick={openFilePicker}
+            disabled={scanning}
+            aria-label="Upload photo from files"
+          >
+            Upload Photo
+          </button>
+        </div>
 
         <button
-          className="btn btn--secondary"
-          onClick={openFilePicker}
-          disabled={scanning}
-          aria-label="Upload photo from files"
-        >
-          Upload Photo
-        </button>
-
-        <button
-          className={`btn btn--primary ${scanning ? 'btn--loading' : ''}`}
+          className={`btn btn--primary scanner-actions__scan ${scanning ? 'btn--loading' : ''}`}
           onClick={handleScan}
           disabled={!canScan}
           aria-busy={scanning}
@@ -310,6 +313,7 @@ export default function Scanner({ onResult }) {
             <video
               ref={videoRef}
               className="camera-modal__video"
+              style={{ transform: 'scaleX(-1)' }}
               playsInline
               muted
               autoPlay
@@ -325,10 +329,18 @@ export default function Scanner({ onResult }) {
               }}
             />
             <div className="camera-modal__actions">
-              <button className="btn btn--primary" type="button" onClick={captureFromCamera}>
+              <button
+                className="btn btn--primary camera-modal__btn camera-modal__btn--capture"
+                type="button"
+                onClick={captureFromCamera}
+              >
                 Capture
               </button>
-              <button className="btn btn--secondary" type="button" onClick={closeCameraModal}>
+              <button
+                className="btn btn--secondary camera-modal__btn camera-modal__btn--cancel"
+                type="button"
+                onClick={closeCameraModal}
+              >
                 Cancel
               </button>
             </div>

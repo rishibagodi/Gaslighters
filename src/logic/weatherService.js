@@ -73,13 +73,7 @@ function estimateSolarRadiation(cloudPercent) {
  * @returns {Promise<{temp_c: number, humidity: number, wind_ms: number, solar_rad: number, weather_cached: boolean}>}
  */
 export async function getWeather(lat, lon) {
-  // 1. Try cache first
-  const cached = getCachedWeather(lat, lon);
-  if (cached) {
-    return { ...cached, weather_cached: true };
-  }
-
-  // 2. Fetch directly from OpenWeatherMap
+  // 1. Try fetching fresh weather first
   const url =
     `https://api.openweathermap.org/data/2.5/weather` +
     `?lat=${encodeURIComponent(lat)}` +
@@ -87,27 +81,35 @@ export async function getWeather(lat, lon) {
     `&appid=d49260283f0533aa92330fe3ccca0a37` +
     `&units=metric`;
 
-  const response = await fetch(url);
+  try {
+    const response = await fetch(url);
 
-  if (!response.ok) {
-    throw new Error(
-      `OpenWeatherMap API error: ${response.status} ${response.statusText}`
-    );
+    if (!response.ok) {
+      throw new Error(
+        `OpenWeatherMap API error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const json = await response.json();
+
+    const data = {
+      temp_c: json.main.temp,
+      humidity: json.main.humidity,
+      wind_ms: json.wind.speed,
+      solar_rad: estimateSolarRadiation(json.clouds?.all ?? 0),
+    };
+
+    // 2. Cache fresh result for offline/network-failure fallback
+    setCachedWeather(lat, lon, data);
+
+    return { ...data, weather_cached: false };
+  } catch (error) {
+    const cached = getCachedWeather(lat, lon);
+    if (cached) {
+      return { ...cached, weather_cached: true };
+    }
+    throw error;
   }
-
-  const json = await response.json();
-
-  const data = {
-    temp_c: json.main.temp,
-    humidity: json.main.humidity,
-    wind_ms: json.wind.speed,
-    solar_rad: estimateSolarRadiation(json.clouds?.all ?? 0),
-  };
-
-  // 3. Cache the fresh result
-  setCachedWeather(lat, lon, data);
-
-  return { ...data, weather_cached: false };
 }
 
 export default getWeather;

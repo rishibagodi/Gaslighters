@@ -154,8 +154,64 @@ h6 {
 /* Action buttons row */
 .scanner-actions {
   display: flex;
+  flex-direction: column;
   gap: 0.75rem;
-  justify-content: flex-end;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  align-items: center;
+}
+
+.scanner-actions__row {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.scanner-actions__row .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+.scanner-actions__scan {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Camera modal actions */
+.camera-modal__actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.camera-modal__actions .camera-modal__btn {
+  flex: 1;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.camera-modal__btn--capture {
+  background: linear-gradient(135deg, #2D6A4F, #24563f);
+  color: #ffffff;
+  border: 1px solid #2D6A4F;
+}
+
+.camera-modal__btn--capture:not(:disabled):hover {
+  background: linear-gradient(135deg, #24563f, #1f4a36);
+}
+
+.camera-modal__btn--cancel {
+  background: #ffffff;
+  color: #2D6A4F;
+  border: 1px solid #2D6A4F;
+}
+
+.camera-modal__btn--cancel:not(:disabled):hover {
+  background: rgba(45, 106, 79, 0.08);
 }
 
 /* Buttons */

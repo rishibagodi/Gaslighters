@@ -21,6 +21,11 @@ export default function App() {
 
   /* ── Scan handler ───────────────────────────────────── */
   const handleScanResult = useCallback((result) => {
+    if (!result) {
+      setScanResult(null);
+      return;
+    }
+
     const entry = saveResult(result);
     setHistory(getHistory());
 
