@@ -1,71 +1,50 @@
-# Agri-Netra (Gaslighters)
+# Agri-Netra
 
-Agri-Netra is a React + Vite web app for crop support workflows:
+## What it is
+Agri-Netra is a web app for farmers. You upload or capture a crop leaf photo, run disease detection with an on-device TensorFlow.js model, and get irrigation recommendations using the FAO-56 Penman-Monteith ET0 formula with live weather data.
 
-- Crop image disease scanning (TensorFlow.js model in-browser)
-- Disease result mapping with treatment and prevention guidance
-- Irrigation planning using weather data + FAO-style ET logic
-- Local dashboard history persisted in `localStorage`
+Disease detection works fully offline after the model is loaded once.
 
-## Tech Stack
+## Tech
+Built with React 19, Vite, TailwindCSS, TensorFlow.js, OpenWeatherMap API, and Recharts.
 
-- React 19
-- Vite 8
-- TensorFlow.js (`@tensorflow/tfjs`)
-- OpenWeatherMap API via server proxy (`/api/weather`)
+No backend server is required for the current setup.
 
-## Quick Start
+## Getting started
+```bash
+git clone <your-repo-url>
+cd Gaslighters
+npm install
+```
+
+Add your OpenWeatherMap API key directly in `src/logic/weatherService.js` where the weather fetch URL is built.
+
+Put model files in `public/model/`:
+
+```text
+model.json
+group1-shard1of4.bin
+group1-shard2of4.bin
+group1-shard3of4.bin
+group1-shard4of4.bin
+class_indices.json
+```
 
 ```bash
-npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite (usually `http://localhost:5173`).
+## Model files
+Model files are not in this repo because of size limits.
 
-## Environment Variables
+Download them from `github.com/Rishit-dagli/Greenathon-Plant-AI` and place them in `public/model/`.
 
-Create a `.env` file in the project root (`Gaslighters/.env`):
+## How it works
+Disease detection pipeline: an image is preprocessed into a model-ready tensor, then passed to the TensorFlow.js model in the browser. Scores are mapped to class labels and treatment/prevention info, and low-confidence scans are rejected with a retry message.
 
-```bash
-OPENWEATHER_API_KEY=your_openweathermap_api_key
-```
+Irrigation calculation: the app fetches current weather, computes ET0 with the FAO-56 Penman-Monteith method, then applies crop coefficient (Kc) by growth stage. Soil moisture level is used to reduce net irrigation depth before showing the final recommendation.
 
-Notes:
+Offline capability: once model files are downloaded by the browser, disease inference runs locally with no network calls. Irrigation still needs internet because weather data is live.
 
-- This key is read by the serverless weather proxy in `api/weather.js`.
-- Do not prefix with `VITE_` (that would expose it to the browser bundle).
-- During local dev, use a runtime that supports the serverless function route (for example `vercel dev`) or provide an equivalent `/api/weather` backend route.
+Scan history in localStorage: successful scan results are saved locally and shown on the dashboard. No cloud sync is used, so data stays on the device/browser.
 
-## Irrigation Location
-
-- The irrigation form includes a `Use My Location` action.
-- It uses `navigator.geolocation.getCurrentPosition()` and stores coordinates internally.
-- Latitude/longitude are sent to `planIrrigation()` automatically; users do not need to enter API keys in the UI.
-
-## Add the TensorFlow.js Model
-
-`useModel` loads the model from:
-
-- `/model/model.json`
-
-So place model artifacts under `public/model/`:
-
-```text
-public/model/
-  model.json
-  group1-shard1of4.bin
-  group1-shard2of4.bin
-  group1-shard3of4.bin
-  group1-shard4of4.bin
-  class_indices.json
-```
-
-`class_indices.json` is used to map predicted class indices to class names at startup.
-
-## Build
-
-```bash
-npm run build
-npm run preview
-```
