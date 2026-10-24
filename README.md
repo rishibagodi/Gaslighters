@@ -8,7 +8,7 @@ Disease detection works fully offline after the model is loaded once.
 ## Tech
 Built with React 19, Vite, TailwindCSS, TensorFlow.js, OpenWeatherMap API, and Recharts.
 
-Weather needs the small api/weather.js serverless proxy; disease detection needs no backend.
+No backend server is required for the current setup.
 
 ## Getting started
 ```bash
@@ -17,7 +17,7 @@ cd Gaslighters
 npm install
 ```
 
-Weather requests go through the serverless proxy in api/weather.js, which reads OPENWEATHER_API_KEY from the server environment. Never put the key in client code. For local development, link the project (vercel link), add the key as a Development variable (vercel env add OPENWEATHER_API_KEY development), then run vercel dev (port 3000) alongside npm run dev. Vite proxies /api/weather to it.
+Add your OpenWeatherMap API key directly in `src/logic/weatherService.js` where the weather fetch URL is built.
 
 Put model files in `public/model/`:
 
